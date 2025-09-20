@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SRMVEC CGPA Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(120deg, #e0e7ff 0%, #f0f5ff 100%);
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px 24px 24px 24px;
+    }
+    h1 {
+      text-align: center;
+      color: #3b82f6;
+      margin-bottom: 24px;
+    }
+    .select-group {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    label {
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+      display: block;
+    }
+    select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 1rem;
+      background: #f3f4f6;
+      transition: border 0.2s;
+    }
+    select:focus {
+      border: 1.5px solid #3b82f6;
+      outline: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      background: #f9fafb;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px 8px;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background: #e0e7ff;
+      color: #1e293b;
+      font-weight: 600;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    .cgpa-result {
+      margin-top: 24px;
+      font-size: 1.3em;
+      color: #059669;
+      text-align: center;
+      font-weight: bold;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 16px 4px; }
+      .select-group { flex-direction: column; gap: 8px; }
+      th, td { font-size: 0.95em; }
+    }
+    body.dark {
+      background: linear-gradient(120deg, #18181b 0%, #27272a 100%);
+    }
+    .container.dark {
+      background: #18181b;
+      color: #f3f4f6;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.32);
+    }
+    h1.dark { color: #fbbf24; }
+    label.dark { color: #fbbf24; }
+    select.dark, input.dark {
+      background: #27272a;
+      color: #f3f4f6;
+      border: 1px solid #52525b;
+    }
+    table.dark { background: #23232a; }
+    th.dark { background: #18181b; color: #fbbf24; }
+    td.dark { color: #f3f4f6 !important; }
+    .cgpa-result.dark { color: #22d3ee; }
+    #calc-btn.dark {
+      background: #fbbf24 !important;
+      color: #18181b !important;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div style="position:fixed;top:18px;right:32px;z-index:10;">
+    <span id="light-mode" title="Light Mode" style="cursor:pointer;font-size:1.7em;margin-right:10px;">&#9728;</span>
+    <span id="dark-mode" title="Dark Mode" style="cursor:pointer;font-size:1.7em;">&#9790;</span>
+  </div>
+  <div class="container">
+    <h1>SRMVEC CGPA Calculator</h1>
+    <div class="select-group">
+      <div>
+        <label for="department">Department</label>
+        <select id="department">
+          <option value="">Choose your department</option>
+        </select>
+      </div>
+      <div>
+        <label for="semester">Semester</label>
+        <select id="semester">
+          <option value="">Choose your semester</option>
+        </select>
+      </div>
+    </div>
+    <div id="prev-cgpa-container" style="display:none; margin-bottom:16px;">
+      <label for="prev-cgpa">Previous CGPA</label>
+      <input type="number" id="prev-cgpa" min="0" max="10" step="0.01" style="padding:8px; border-radius:8px; border:1px solid #cbd5e1; margin-right:8px; width:100px;">
+      <label for="prev-credits">Previous Total Credits</label>
+  <input type="number" id="prev-credits" min="0" step="0.01" style="padding:8px; border-radius:8px; border:1px solid #cbd5e1; width:100px;" readonly>
+    </div>
+    <div id="subjects-container"></div>
+    <div style="text-align:center; margin-top:18px;">
+      <button id="calc-btn" style="padding:10px 24px; background:#3b82f6; color:#fff; border:none; border-radius:8px; font-size:1.1em; cursor:pointer;">Calculate CGPA</button>
+    </div>
+    <div class="cgpa-result" id="cgpa-result"></div>
+  </div>
+  <script>
+    // Dark/Light mode toggle
+    function setTheme(dark) {
+      document.body.classList.toggle('dark', dark);
+      document.querySelector('.container').classList.toggle('dark', dark);
+      document.querySelector('h1').classList.toggle('dark', dark);
+      document.querySelectorAll('label').forEach(e => e.classList.toggle('dark', dark));
+      document.querySelectorAll('select').forEach(e => e.classList.toggle('dark', dark));
+      document.querySelectorAll('input').forEach(e => e.classList.toggle('dark', dark));
+      document.querySelectorAll('table').forEach(e => e.classList.toggle('dark', dark));
+      document.querySelectorAll('th').forEach(e => e.classList.toggle('dark', dark));
+      document.querySelectorAll('td').forEach(e => e.classList.toggle('dark', dark));
+      document.getElementById('cgpa-result').classList.toggle('dark', dark);
+      document.getElementById('calc-btn').classList.toggle('dark', dark);
+    }
+    document.getElementById('light-mode').onclick = () => setTheme(false);
+    document.getElementById('dark-mode').onclick = () => setTheme(true);
+
+    // Detect system color scheme and set initial theme
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme(true);
+    } else {
+      setTheme(false);
+    }
+    // Embedded data from subjects.json
+    const data = {
+      "departments": [
+        {
+          "id": "cse",
+          "name": "Computer Science and Engineering",
+          "semesters": {
+            "1": [
+              { "code": "EN3111", "name": "ENGLISH", "credits": 3 },
+              { "code": "MA3122", "name": "MATRICES AND CALCULUS", "credits": 4 },
+              { "code": "PH3123", "name": "PHYSICS", "credits": 3 },
+              { "code": "CH3124", "name": "CHEMISTRY", "credits": 3 },
+              { "code": "GE3131", "name": "BEEE", "credits": 3 },
+              { "code": "GE3111", "name": "Tamil", "credits": 1 },
+              { "code": "GE3121", "name": "Physics and Chemistry Lab", "credits": 2 },
+              { "code": "GE3134", "name": "Engineering Practice Lab", "credits": 2 },
+              { "code": "EN3119", "name": "English Lab", "credits": 1 }
+            ],
+            "2": [
+              { "code": "EN3211", "name": "English 2", "credits": 3 },
+              { "code": "MA3221", "name": "Statistics and Numericals", "credits": 4 },
+              { "code": "PH3223", "name": "Physics for IS", "credits": 3 },
+              { "code": "CH3224", "name": "Chemistry for IS", "credits": 3 },
+              { "code": "CS3225", "name": "PSPP", "credits": 3 },
+              { "code": "GE3211", "name": "Tamil", "credits": 1 },
+              { "code": "GE3226", "name": "EG", "credits": 3 },
+              { "code": "GE3227", "name": "Engineering Science Lab", "credits": 2 },
+              { "code": "CS3228", "name": "PSPP Lab", "credits": 2 },
+              { "code": "GE3229", "name": "NSS/YRC/NSO", "credits": 0 }
+            ],
+            "3": [
+              { "code": "MA3311", "name": "Discrete Mathematics", "credits": 3 },
+              { "code": "CS3312", "name": "Digital Principles and Computer Organisation", "credits": 3 },
+              { "code": "CS3313", "name": "Programming and Data Structures", "credits": 3 },
+              { "code": "CS3314", "name": "Object Oriented Programming (OOP)", "credits": 3 },
+              { "code": "CS3315", "name": "Introduction to Data Science", "credits": 3 },
+              { "code": "CS3316", "name": "Software Engineering", "credits": 3 },
+              { "code": "CS3317", "name": "Programming and Data Structures Lab", "credits": 1.5 },
+              { "code": "CS3318", "name": "OOP Lab", "credits": 1.5 },
+              { "code": "CS3319", "name": "Data Science Lab", "credits": 1.5 }
+            ],
+            "4": [
+              { "code": "MA3411", "name": "Applied Mathematics for I and S", "credits": 2 },
+              { "code": "CS3412", "name": "Theory of Computation", "credits": 3 },
+              { "code": "CS3413", "name": "Object Oriented Analysis and Design", "credits": 3 },
+              { "code": "CS3414", "name": "Database Management Systems (DBMS)", "credits": 3 },
+              { "code": "CS3415", "name": "Design and Analysis of Algorithms", "credits": 3 },
+              { "code": "CS3416", "name": "Operating Systems", "credits": 3 },
+              { "code": "GE3417", "name": "NCC", "credits": 3 },
+              { "code": "CS3418", "name": "OS Lab", "credits": 1.5 },
+              { "code": "CS3419", "name": "Object Oriented Analysis and Design Lab", "credits": 1.5 },
+              { "code": "CS3420", "name": "DBMS Lab", "credits": 1.5 }
+            ]
+          }
+        },
+        {
+          "id": "ece",
+          "name": "Electronics and Communication Engineering",
+          "semesters": {
+            "1": [
+              { "code": "EN3111", "name": "ENGLISH", "credits": 3 },
+              { "code": "MA3122", "name": "MATRICES AND CALCULUS", "credits": 4 },
+              { "code": "PH3123", "name": "PHYSICS", "credits": 3 },
+              { "code": "CH3124", "name": "CHEMISTRY", "credits": 3 },
+              { "code": "GE3132", "name": "BEIE", "credits": 3 },
+              { "code": "GE3111", "name": "Tamil", "credits": 1 },
+              { "code": "GE3121", "name": "Physics and Chemistry Lab", "credits": 2 },
+              { "code": "GE3134", "name": "Engineering Practice Lab", "credits": 2 },
+              { "code": "EN3119", "name": "English Lab", "credits": 1 }
+            ],
+            "2": [
+              { "code": "EN3211", "name": "English 2", "credits": 3 },
+              { "code": "MA3221", "name": "Statistics and Numericals", "credits": 4 },
+              { "code": "PH3222", "name": "Physics for Electronics", "credits": 3 },
+              { "code": "CH3223", "name": "Chemistry for Electronics", "credits": 3 },
+              { "code": "EC3225", "name": "PSPP", "credits": 3 },
+              { "code": "GE3211", "name": "Tamil", "credits": 1 },
+              { "code": "GE3226", "name": "EG", "credits": 3 },
+              { "code": "GE3227", "name": "Engineering Science Lab", "credits": 2 },
+              { "code": "EC3228", "name": "PSPP Lab", "credits": 2 },
+              { "code": "GE3229", "name": "NSS/YRC/NSO", "credits": 0 }
+            ],
+            "3": [
+              { "code": "EC3311", "name": "TPDE", "credits": 3 },
+              { "code": "EC3312", "name": "SSDC", "credits": 3 },
+              { "code": "EC3313", "name": "SS", "credits": 3 },
+              { "code": "EC3314", "name": "ECA", "credits": 3 },
+              { "code": "EC3315", "name": "EMF", "credits": 3 },
+              { "code": "EC3316", "name": "DSD", "credits": 4 },
+              { "code": "EC3317", "name": "ECDL", "credits": 1.5 },
+              { "code": "EC3318", "name": "CEDL Lab", "credits": 1.5 }
+            ],
+            "4": [
+              { "code": "MA3412", "name": "Applied Mathematics for ECE", "credits": 2 },
+              { "code": "EC3413", "name": "Linear Integrated Circuits", "credits": 3 },
+              { "code": "EC3414", "name": "Communication Systems", "credits": 3 },
+              { "code": "EC3415", "name": "Microprocessor, Microcontrollers and Interfacing", "credits": 3 },
+              { "code": "EC3416", "name": "Control Systems", "credits": 3 },
+              { "code": "GE3417", "name": "NCC", "credits": 3 },
+              { "code": "EC3418", "name": "Digital Signal Processing (DSP)", "credits": 4 },
+              { "code": "EC3419", "name": "Linear IC and PCB Lab", "credits": 1.5 },
+              { "code": "EC3420", "name": "Microprocessors and Microcontrollers and Interfacing Lab", "credits": 1.5 }
+            ]
+          }
+        }
+      ],
+      "gradeMapping": {
+        "O": 10,
+        "A+": 9,
+        "A": 8,
+        "B+": 7,
+        "B": 6,
+        "C": 5,
+        "D": 4,
+        "F": 0
+      }
+    };
+
+    // Populate department selector
+    const deptSelect = document.getElementById('department');
+    data.departments.forEach(dept => {
+      const opt = document.createElement('option');
+      opt.value = dept.id;
+      opt.textContent = dept.name;
+      deptSelect.appendChild(opt);
+    });
+
+    // Populate semester selector when department changes
+    deptSelect.addEventListener('change', function() {
+      const semSelect = document.getElementById('semester');
+      semSelect.innerHTML = '<option value="">Choose your semester</option>';
+      document.getElementById('subjects-container').innerHTML = '';
+      document.getElementById('cgpa-result').textContent = '';
+      if (!this.value) return;
+      const dept = data.departments.find(d => d.id === this.value);
+      Object.keys(dept.semesters).forEach(sem => {
+        const opt = document.createElement('option');
+        opt.value = sem;
+        opt.textContent = `Semester ${sem}`;
+        semSelect.appendChild(opt);
+      });
+    });
+
+    // Show subjects table when semester changes
+    document.getElementById('semester').addEventListener('change', function() {
+      const deptId = deptSelect.value;
+      const sem = this.value;
+      const subjectsDiv = document.getElementById('subjects-container');
+      subjectsDiv.innerHTML = '';
+      document.getElementById('cgpa-result').textContent = '';
+      // Show/hide previous CGPA input for semesters > 1
+      const prevCgpaContainer = document.getElementById('prev-cgpa-container');
+      if (parseInt(sem) > 1) {
+        prevCgpaContainer.style.display = '';
+        // Auto-calculate previous total credits
+        let prevCredits = 0;
+        const dept = data.departments.find(d => d.id === deptId);
+        for (let s = 1; s < parseInt(sem); s++) {
+          const subjects = dept.semesters[s.toString()];
+          if (subjects) {
+            prevCredits += subjects.reduce((sum, sub) => sum + sub.credits, 0);
+          }
+        }
+        document.getElementById('prev-credits').value = prevCredits;
+      } else {
+        prevCgpaContainer.style.display = 'none';
+        document.getElementById('prev-cgpa').value = '';
+        document.getElementById('prev-credits').value = '';
+      }
+      if (!deptId || !sem) return;
+      const dept = data.departments.find(d => d.id === deptId);
+      const subjects = dept.semesters[sem];
+      if (!subjects) return;
+      // Build table
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      thead.innerHTML = `<tr><th>Code</th><th>Subject</th><th>Credits</th><th>Grade</th></tr>`;
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      subjects.forEach(sub => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${sub.code}</td><td>${sub.name}</td><td>${sub.credits}</td>`;
+        const gradeTd = document.createElement('td');
+        const gradeSelect = document.createElement('select');
+        gradeSelect.innerHTML = `<option value="">--</option>` + Object.keys(data.gradeMapping).map(g => `<option value="${g}">${g}</option>`).join('');
+        gradeTd.appendChild(gradeSelect);
+        tr.appendChild(gradeTd);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      subjectsDiv.appendChild(table);
+      // Listen for previous CGPA/credits changes
+      if (parseInt(sem) > 1) {
+        document.getElementById('prev-cgpa').oninput = () => {};
+        document.getElementById('prev-credits').oninput = () => {};
+      }
+      // Reapply dark mode to new table if needed
+      if (document.body.classList.contains('dark')) {
+        setTheme(true);
+      }
+    });
+
+    // CGPA calculation (weighted average for semesters > 1)
+    function calculateCGPA() {
+      const deptId = deptSelect.value;
+      const sem = document.getElementById('semester').value;
+      if (!deptId || !sem) return;
+      const dept = data.departments.find(d => d.id === deptId);
+      const subjects = dept.semesters[sem];
+      const table = document.querySelector('#subjects-container table');
+      if (!table) return;
+      let totalCredits = 0, totalPoints = 0, allGraded = true;
+      Array.from(table.tBodies[0].rows).forEach((row, i) => {
+        const credits = subjects[i].credits;
+        const grade = row.cells[3].querySelector('select').value;
+        if (!grade) allGraded = false;
+        totalCredits += credits;
+        totalPoints += (data.gradeMapping[grade] || 0) * credits;
+      });
+      const gpa = totalCredits > 0 ? (totalPoints / totalCredits) : 0;
+      let cgpa = gpa;
+      // If semester > 1, use previous CGPA and credits
+      if (parseInt(sem) > 1) {
+        const prevCgpa = parseFloat(document.getElementById('prev-cgpa').value);
+        const prevCredits = parseFloat(document.getElementById('prev-credits').value);
+        if (!isNaN(prevCgpa) && !isNaN(prevCredits) && prevCredits > 0 && allGraded) {
+          cgpa = ((prevCgpa * prevCredits) + (gpa * totalCredits)) / (prevCredits + totalCredits);
+        } else if (!allGraded) {
+          document.getElementById('cgpa-result').textContent = 'Enter all grades to calculate CGPA.';
+          return;
+        } else {
+          document.getElementById('cgpa-result').textContent = 'Enter previous CGPA.';
+          return;
+        }
+      } else if (!allGraded) {
+        document.getElementById('cgpa-result').textContent = 'Enter all grades to calculate CGPA.';
+        return;
+      }
+      document.getElementById('cgpa-result').textContent = `CGPA: ${cgpa.toFixed(2)}`;
+    }
+
+    // Calculate CGPA only when button is clicked
+    document.getElementById('calc-btn').onclick = calculateCGPA;
+  </script>
+</body>
+</html>
